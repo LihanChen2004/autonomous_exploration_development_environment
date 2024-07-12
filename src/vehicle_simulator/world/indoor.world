@@ -1,14 +1,26 @@
-<?xml version="1.0" ?>
+<?xml version="1.10" ?>
 <sdf version="1.6">
   <world name="default">
-    <include>
-      <uri>model://sun</uri>
-    </include>
+    <plugin
+      filename="gz-sim-physics-system"
+      name="gz::sim::systems::Physics">
+    </plugin>
+    <plugin
+      filename="gz-sim-sensors-system"
+      name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin
+      filename="gz-sim-scene-broadcaster-system"
+      name="gz::sim::systems::SceneBroadcaster">
+    </plugin>
+    <plugin
+      filename="gz-sim-user-commands-system"
+      name="gz::sim::systems::UserCommands">
+    </plugin>
     <include>
       <uri>model://indoor</uri>
     </include>
-    <plugin name="ros_interface_plugin" filename="librotors_gazebo_ros_interface_plugin.so"/>
-    <plugin name="gazebo_ros_state" filename="libgazebo_ros_state.so"/>
     <spherical_coordinates>
       <surface_model>EARTH_WGS84</surface_model>
       <latitude_deg>47.3667</latitude_deg>

@@ -20,9 +20,11 @@
 #include <geometry_msgs/msg/polygon_stamped.h>
 #include <sensor_msgs/msg/imu.h>
 
-#include <gazebo_msgs/msg/model_state.hpp>
-#include <gazebo_msgs/msg/entity_state.hpp>
-#include <gazebo_msgs/srv/set_entity_state.hpp>
+// #include <gazebo_msgs/msg/model_state.hpp>
+// #include <gazebo_msgs/msg/entity_state.hpp>
+// #include <gazebo_msgs/srv/set_entity_state.hpp>
+#include <gz/msgs.hh>
+#include <gz/transport.hh>
 
 #include "tf2/transform_datatypes.h"
 #include "tf2_ros/transform_broadcaster.h"
@@ -369,15 +371,27 @@ int main(int argc, char** argv)
   geometry_msgs::msg::TransformStamped transformTfGeom ; 
   odomTrans.frame_id_ = "map";
 
-  gazebo_msgs::msg::EntityState cameraState;
-  cameraState.name = "camera";
-  gazebo_msgs::msg::EntityState lidarState;
-  lidarState.name = "lidar";
-  gazebo_msgs::msg::EntityState robotState;
-  robotState.name = "robot";
+  // gazebo_msgs::msg::EntityState cameraState;
+  // cameraState.name = "camera";
+  // gazebo_msgs::msg::EntityState lidarState;
+  // lidarState.name = "lidar";
+  // gazebo_msgs::msg::EntityState robotState;
+  // robotState.name = "robot";
 
-  rclcpp::Client<gazebo_msgs::srv::SetEntityState>::SharedPtr client = nh->create_client<gazebo_msgs::srv::SetEntityState>("/set_entity_state");
-  auto request  = std::make_shared<gazebo_msgs::srv::SetEntityState::Request>();
+  gz::transport::Node node;
+
+  gz::msgs::Pose vehicle_pose;
+  vehicle_pose.set_name("robot");
+  auto *vehicle_position = vehicle_pose.mutable_position();
+  auto *vehicle_orientation = vehicle_pose.mutable_orientation();
+
+  gz::msgs::Pose lidar_pose;
+  lidar_pose.set_name("lidar");
+  auto *lidar_position = lidar_pose.mutable_position();
+  auto *lidar_orientation = lidar_pose.mutable_orientation();
+
+  // rclcpp::Client<gazebo_msgs::srv::SetEntityState>::SharedPtr client = nh->create_client<gazebo_msgs::srv::SetEntityState>("/set_entity_state");
+  // auto request  = std::make_shared<gazebo_msgs::srv::SetEntityState::Request>();
 
   pubScanPointer = nh->create_publisher<sensor_msgs::msg::PointCloud2>("/registered_scan", 2);
 
@@ -447,29 +461,62 @@ int main(int argc, char** argv)
     transformTfGeom.header.stamp = odomTime;
     tfBroadcaster->sendTransform(transformTfGeom);
 
-    // publish 200Hz Gazebo model state messages (this is for Gazebo simulation)
-    cameraState.pose.orientation = geoQuat;
-    cameraState.pose.position.x = vehicleX;
-    cameraState.pose.position.y = vehicleY;
-    cameraState.pose.position.z = vehicleZ + cameraOffsetZ;
-    request->state = cameraState;
-    auto response = client->async_send_request(request);
+    // // publish 200Hz Gazebo model state messages (this is for Gazebo simulation)
+    // cameraState.pose.orientation = geoQuat;
+    // cameraState.pose.position.x = vehicleX;
+    // cameraState.pose.position.y = vehicleY;
+    // cameraState.pose.position.z = vehicleZ + cameraOffsetZ;
+    // request->state = cameraState;
+    // auto response = client->async_send_request(request);
 
-    robotState.pose.orientation = geoQuat;
-    robotState.pose.position.x = vehicleX;
-    robotState.pose.position.y = vehicleY;
-    robotState.pose.position.z = vehicleZ;
-    request->state = robotState;
-    response = client->async_send_request(request);
+    // robotState.pose.orientation = geoQuat;
+    // robotState.pose.position.x = vehicleX;
+    // robotState.pose.position.y = vehicleY;
+    // robotState.pose.position.z = vehicleZ;
+    // request->state = robotState;
+    // response = client->async_send_request(request);
 
+    // quat_tf.setRPY(terrainRoll, terrainPitch, 0);
+    // tf2::convert(quat_tf, geoQuat);
+    // lidarState.pose.orientation = geoQuat;
+    // lidarState.pose.position.x = vehicleX;
+    // lidarState.pose.position.y = vehicleY;
+    // lidarState.pose.position.z = vehicleZ;
+    // request->state = lidarState;
+    // response = client->async_send_request(request);
+    
+    unsigned int timeout = 300;
+    gz::msgs::Boolean rep;
+    bool result, executed;
+
+    vehicle_position->set_x(vehicleX);
+    vehicle_position->set_y(vehicleY);
+    vehicle_position->set_z(vehicleZ);
+
+    vehicle_orientation->set_w(geoQuat.w);
+    vehicle_orientation->set_x(geoQuat.x);
+    vehicle_orientation->set_y(geoQuat.y);
+    vehicle_orientation->set_z(geoQuat.z);
+    executed = node.Request("/world/default/set_pose", vehicle_pose, timeout, rep, result);
+    if (!executed){
+      std::cerr << "Setting vehicle pose failed" << std::endl;
+    }
+
+    
+    lidar_position->set_x(vehicleX);
+    lidar_position->set_y(vehicleY);
+    lidar_position->set_z(vehicleZ);
+    
     quat_tf.setRPY(terrainRoll, terrainPitch, 0);
     tf2::convert(quat_tf, geoQuat);
-    lidarState.pose.orientation = geoQuat;
-    lidarState.pose.position.x = vehicleX;
-    lidarState.pose.position.y = vehicleY;
-    lidarState.pose.position.z = vehicleZ;
-    request->state = lidarState;
-    response = client->async_send_request(request);
+    lidar_orientation->set_w(geoQuat.w);
+    lidar_orientation->set_x(geoQuat.x);
+    lidar_orientation->set_y(geoQuat.y);
+    lidar_orientation->set_z(geoQuat.z);
+    executed = node.Request("/world/default/set_pose", lidar_pose, timeout, rep, result);
+    if (!executed){
+      std::cerr << "Setting lidar pose failed" << std::endl;
+    }
 
     status = rclcpp::ok();
     rate.sleep();
