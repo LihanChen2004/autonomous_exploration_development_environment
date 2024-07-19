@@ -39,7 +39,7 @@
     <arg name="headless" value="$(arg headless)"/>
     <arg name="debug" value="$(arg debug)"/>
     <arg name="verbose" value="$(arg verbose)"/>
-    <arg name="world_name" value="$(find vehicle_simulator)/world/$(arg world_name).world"/>
+    <!-- <arg name="world_name" value="$(find vehicle_simulator)/world/$(arg world_name).world"/> -->
   </include>
 
   <param name="rgbd_camera_description" command="$(find xacro)/xacro --inorder '$(find vehicle_simulator)/urdf/rgbd_camera.urdf.xacro'" />

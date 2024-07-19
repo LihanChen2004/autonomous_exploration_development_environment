@@ -9,9 +9,15 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 ## Find catkin macros and libraries
 find_package(catkin REQUIRED COMPONENTS
   roscpp
+  rospy
   std_msgs
   sensor_msgs
+  geometry_msgs
+  message_generation
+  tf
   pcl_ros
+  pcl_conversions
+  gazebo_msgs
 )
 
 find_package(OpenCV REQUIRED)
@@ -20,6 +26,19 @@ find_package(PCL REQUIRED)
 ###################################
 ## catkin specific configuration ##
 ###################################
+
+add_service_files(
+  FILES
+  initGazebo.srv
+  getPointCloud.srv
+)
+
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+  sensor_msgs
+  geometry_msgs
+)
 
 catkin_package(
   CATKIN_DEPENDS

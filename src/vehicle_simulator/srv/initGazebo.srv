@@ -1,0 +1,4 @@
+geometry_msgs/Pose world_pose
+string model_path
+---
+bool success

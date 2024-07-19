@@ -11,8 +11,10 @@
 #include <std_msgs/Bool.h>
 #include <nav_msgs/Path.h>
 #include <nav_msgs/Odometry.h>
+#include <geometry_msgs/Pose.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <gazebo_msgs/ModelState.h>
+#include <gazebo_msgs/SpawnModel.h>
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/Joy.h>
@@ -29,6 +31,9 @@
 #include <pcl/point_types.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/kdtree/kdtree_flann.h>
+
+#include <vehicle_simulator/initGazebo.h>
+#include <vehicle_simulator/getPointCloud.h>
 
 using namespace std;
 
@@ -300,6 +305,44 @@ void speedHandler(const geometry_msgs::TwistStamped::ConstPtr& speedIn)
   vehicleYawRate = speedIn->twist.angular.z;
 }
 
+// Service callback for initializing Gazebo
+auto initGazeboCallback(vehicle_simulator::initGazebo::Request& req, vehicle_simulator::initGazebo::Response& res) -> bool {
+  // Spawn the world
+  ros::NodeHandle n;
+  ros::ServiceClient client = n.serviceClient<gazebo_msgs::SpawnModel>("gazebo/spawn_sdf_model");
+  gazebo_msgs::SpawnModel spawnModel;
+
+    // Read the model file
+    std::ifstream ifs(req.model_path);
+    std::string model_xml((std::istreambuf_iterator<char>(ifs)),
+                          (std::istreambuf_iterator<char>()));
+
+    // Set the model name and XML
+    spawnModel.request.model_name = "world";
+    spawnModel.request.model_xml = model_xml;
+
+  if (client.call(spawnModel) && spawnModel.response.success) {
+    ROS_INFO("Successfully spawned world model");
+  } else {
+    ROS_ERROR("Failed to spawn world model");
+    res.success = false;
+    return false;
+  }
+
+  res.success = true;
+  return true;
+}
+
+// Service callback for getting the current point cloud
+auto getPointCloudCallback(vehicle_simulator::getPointCloud::Request& req, vehicle_simulator::getPointCloud::Response& res) -> bool {
+  sensor_msgs::PointCloud2 cloud;
+  pcl::toROSMsg(*scanData, cloud);
+  cloud.header.frame_id = "map";
+  cloud.header.stamp = ros::Time::now();
+  res.pointcloud = cloud;
+  return true;
+}
+
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "vehicleSimulator");
@@ -334,6 +377,10 @@ int main(int argc, char** argv)
   ros::Subscriber subSpeed = nh.subscribe<geometry_msgs::TwistStamped>("/cmd_vel", 5, speedHandler);
 
   ros::Publisher pubVehicleOdom = nh.advertise<nav_msgs::Odometry>("/state_estimation", 5);
+
+  // Initialize service servers
+  ros::ServiceServer initGazeboService = nh.advertiseService("init_gazebo", initGazeboCallback);
+  ros::ServiceServer getPointCloudService = nh.advertiseService("get_pointcloud", getPointCloudCallback);
 
   nav_msgs::Odometry odomData;
   odomData.header.frame_id = "map";
@@ -418,6 +465,7 @@ int main(int argc, char** argv)
     odomTrans.setRotation(tf::Quaternion(geoQuat.x, geoQuat.y, geoQuat.z, geoQuat.w));
     odomTrans.setOrigin(tf::Vector3(vehicleX, vehicleY, vehicleZ));
     tfBroadcaster.sendTransform(odomTrans);
+    
 
     // publish 200Hz Gazebo model state messages (this is for Gazebo simulation)
     cameraState.pose.orientation = geoQuat;
