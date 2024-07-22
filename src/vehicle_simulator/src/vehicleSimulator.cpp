@@ -73,9 +73,10 @@ ros::Time odomTime;
 float vehicleX = 0;
 float vehicleY = 0;
 float vehicleZ = 0;
-float vehicleRoll = 0;
-float vehiclePitch = 0;
-float vehicleYaw = 0;
+float srv_vehicleZ = 0;
+double vehicleRoll = 0;
+double vehiclePitch = 0;
+double vehicleYaw = 0;
 
 float vehicleYawRate = 0;
 float vehicleSpeed = 0;
@@ -320,6 +321,7 @@ auto initGazeboCallback(vehicle_simulator::initGazebo::Request& req, vehicle_sim
     // Set the model name and XML
     spawnModel.request.model_name = "world";
     spawnModel.request.model_xml = model_xml;
+    spawnModel.request.initial_pose = req.world_pose;
 
   if (client.call(spawnModel) && spawnModel.response.success) {
     ROS_INFO("Successfully spawned world model");
@@ -335,6 +337,18 @@ auto initGazeboCallback(vehicle_simulator::initGazebo::Request& req, vehicle_sim
 
 // Service callback for getting the current point cloud
 auto getPointCloudCallback(vehicle_simulator::getPointCloud::Request& req, vehicle_simulator::getPointCloud::Response& res) -> bool {
+
+  vehicleX = req.pose.position.x;
+  vehicleY = req.pose.position.y;
+  srv_vehicleZ = req.pose.position.z;
+  tf::Quaternion q; 
+  tf::quaternionMsgToTF(req.pose.orientation, q);
+  tf::Matrix3x3(q).getRPY(vehicleRoll, vehiclePitch, vehicleYaw); // rpy得是double
+
+  // Wait for the model state to be updated in Gazebo
+  ros::Duration(0.1).sleep();
+
+  // Return the point cloud
   sensor_msgs::PointCloud2 cloud;
   pcl::toROSMsg(*scanData, cloud);
   cloud.header.frame_id = "map";
@@ -428,7 +442,7 @@ int main(int argc, char** argv)
                 0.005 * vehicleYawRate * (-sin(vehicleYaw) * sensorOffsetX - cos(vehicleYaw) * sensorOffsetY);
     vehicleY += 0.005 * sin(vehicleYaw) * vehicleSpeed +
                 0.005 * vehicleYawRate * (cos(vehicleYaw) * sensorOffsetX - sin(vehicleYaw) * sensorOffsetY);
-    vehicleZ = terrainZ + vehicleHeight;
+    vehicleZ = terrainZ + vehicleHeight + srv_vehicleZ;
 
     ros::Time odomTimeRec = odomTime;
     odomTime = ros::Time::now();
