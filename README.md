@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Branch noetic-matterport is used for [MonoGS-LIV](https://github.com/SeanComeOn/MonoGS-LIV)
+Add ros service to spawn world model and get pointcloud at any pose
 
 ## Installation
 
@@ -26,7 +26,7 @@ Branch noetic-matterport is used for [MonoGS-LIV](https://github.com/SeanComeOn/
 
     Or you can download from [here](https://flowus.cn/lihanchen/share/b10aa809-28d3-4b4b-a65f-d72755b1026e?code=4PP1RS)
 
-    Unzip and move it to `src/vehicle_simulator/mesh`. Replace the original matterport folder
+    Unzip and move it to `src/vehicle_simulator/mesh` . Replace the original matterport folder
 
 3. Install Dependency:
 
@@ -40,11 +40,55 @@ Branch noetic-matterport is used for [MonoGS-LIV](https://github.com/SeanComeOn/
     catkin_make
     ```
 
-## Launch
+## Usage
 
-```sh
-roslaunch vehicle_simulator system_matterport.launch
-```
+1. Launch
+
+    ```sh
+    roslaunch vehicle_simulator system_matterport.launch
+    ```
+
+2. Init Gazebo to Spawn world model
+
+    Remember to change the absolute Path
+
+    ```sh
+    rosservice call /init_gazebo "{
+    world_pose: {
+        position: {
+        x: 0.0, 
+        y: 0.0, 
+        z: 0.0
+        }, 
+        orientation: {
+        x: 0.0, 
+        y: 0.0, 
+        z: 0.0, 
+        w: 1.0
+        }
+    }, 
+    model_path: '/home/lihanchen2004/AIR_SUMMER/autonomous_exploration_development_environment/src/vehicle_simulator/mesh/matterport/model.sdf'
+    }"
+    ```
+
+3. Get pointcloud at any pose
+
+    ```sh
+    rosservice call /get_pointcloud "
+    pose: {
+        position: {
+        x: 2.0,
+        y: 2.0,
+        z: 0.0
+        },
+        orientation: {
+        x: 0.0,
+        y: 0.0,
+        z: 0.0,
+        w: 1.0
+        }
+    }"
+    ```
 
 ## Original README
 
