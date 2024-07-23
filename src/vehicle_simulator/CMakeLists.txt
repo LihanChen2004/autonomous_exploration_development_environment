@@ -30,8 +30,8 @@ find_package(PCL REQUIRED)
 
 add_service_files(
   FILES
-  initGazebo.srv
-  getPointCloud.srv
+  InitGazebo.srv
+  GetPointCloud.srv
 )
 
 generate_messages(

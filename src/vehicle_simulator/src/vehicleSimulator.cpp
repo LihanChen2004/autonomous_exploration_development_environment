@@ -33,8 +33,8 @@
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/kdtree/kdtree_flann.h>
 
-#include <vehicle_simulator/initGazebo.h>
-#include <vehicle_simulator/getPointCloud.h>
+#include <vehicle_simulator/InitGazebo.h>
+#include <vehicle_simulator/GetPointCloud.h>
 
 using namespace std;
 
@@ -308,15 +308,7 @@ void speedHandler(const geometry_msgs::Twist::ConstPtr& speedIn)
 }
 
 // Service callback for initializing Gazebo
-#include <ros/ros.h>
-#include <vehicle_simulator/initGazebo.h>
-#include <gazebo_msgs/SpawnModel.h>
-#include <fstream>
-#include <sstream>
-#include <string>
-
-// Service callback for initializing Gazebo
-auto initGazeboCallback(vehicle_simulator::initGazebo::Request& req, vehicle_simulator::initGazebo::Response& res) -> bool {
+auto initGazeboCallback(vehicle_simulator::InitGazebo::Request& req, vehicle_simulator::InitGazebo::Response& res) -> bool {
   ros::NodeHandle n;
   auto client = n.serviceClient<gazebo_msgs::SpawnModel>("gazebo/spawn_sdf_model");
   gazebo_msgs::SpawnModel spawnModel;
@@ -354,7 +346,7 @@ auto initGazeboCallback(vehicle_simulator::initGazebo::Request& req, vehicle_sim
 }
 
 // Service callback for getting the current point cloud
-auto getPointCloudCallback(vehicle_simulator::getPointCloud::Request& req, vehicle_simulator::getPointCloud::Response& res) -> bool {
+auto getPointCloudCallback(vehicle_simulator::GetPointCloud::Request& req, vehicle_simulator::GetPointCloud::Response& res) -> bool {
 
   vehicleX = req.pose.position.x;
   vehicleY = req.pose.position.y;
