@@ -1,4 +1,4 @@
 geometry_msgs/Pose world_pose
-string model_path
+string mesh_path
 ---
 bool success

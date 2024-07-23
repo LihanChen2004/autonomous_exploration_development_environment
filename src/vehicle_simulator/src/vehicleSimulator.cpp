@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ros/ros.h>
+#include <ros/package.h>
 
 #include <message_filters/subscriber.h>
 #include <message_filters/synchronizer.h>
@@ -307,32 +308,49 @@ void speedHandler(const geometry_msgs::Twist::ConstPtr& speedIn)
 }
 
 // Service callback for initializing Gazebo
+#include <ros/ros.h>
+#include <vehicle_simulator/initGazebo.h>
+#include <gazebo_msgs/SpawnModel.h>
+#include <fstream>
+#include <sstream>
+#include <string>
+
+// Service callback for initializing Gazebo
 auto initGazeboCallback(vehicle_simulator::initGazebo::Request& req, vehicle_simulator::initGazebo::Response& res) -> bool {
-  // Spawn the world
   ros::NodeHandle n;
-  ros::ServiceClient client = n.serviceClient<gazebo_msgs::SpawnModel>("gazebo/spawn_sdf_model");
+  auto client = n.serviceClient<gazebo_msgs::SpawnModel>("gazebo/spawn_sdf_model");
   gazebo_msgs::SpawnModel spawnModel;
 
-    // Read the model file
-    std::ifstream ifs(req.model_path);
-    std::string model_xml((std::istreambuf_iterator<char>(ifs)),
-                          (std::istreambuf_iterator<char>()));
+  const std::string package_name = "vehicle_simulator";
+  const std::string model_sdf_path = ros::package::getPath(package_name) + "/mesh/templates/model.sdf";
+  const std::string placeholder = "[mesh_file_uri]";
 
-    // Set the model name and XML
-    spawnModel.request.model_name = "world";
-    spawnModel.request.model_xml = model_xml;
-    spawnModel.request.initial_pose = req.world_pose;
+  // Efficiently read the model file into a string
+  std::ifstream ifs(model_sdf_path);
+  std::string model_xml((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
 
+  // Replace the placeholder with the actual model path
+  size_t pos = 0;
+  while ((pos = model_xml.find(placeholder, pos)) != std::string::npos) {
+    model_xml.replace(pos, placeholder.length(), req.mesh_path);
+    pos += req.mesh_path.length();
+  }
+
+  // Setup the spawn model request
+  spawnModel.request.model_name = "world";
+  spawnModel.request.model_xml = std::move(model_xml); // Use std::move to avoid copying the string
+  spawnModel.request.initial_pose = req.world_pose;
+
+  // Attempt to spawn the model in Gazebo
   if (client.call(spawnModel) && spawnModel.response.success) {
     ROS_INFO("Successfully spawned world model");
+    res.success = true;
   } else {
     ROS_ERROR("Failed to spawn world model");
     res.success = false;
-    return false;
   }
 
-  res.success = true;
-  return true;
+  return res.success;
 }
 
 // Service callback for getting the current point cloud

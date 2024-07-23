@@ -13,5 +13,6 @@ rosservice call /init_gazebo "{
       w: 1.0
     }
   }, 
-  model_path: '/home/lihanchen2004/AIR_SUMMER/autonomous_exploration_development_environment/src/vehicle_simulator/mesh/matterport/model.sdf'
+  mesh_path: '/home/lihanchen2004/AIR_SUMMER/autonomous_exploration_development_environment/src/vehicle_simulator/mesh/matterport/meshes/matterport.dae'
+  # mesh_path: '/home/lihanchen2004/AIR_SUMMER/dataset/gibson_habitat/gibson/Pablo/Pablo.dae'
 }"

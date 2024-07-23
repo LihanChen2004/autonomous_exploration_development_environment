@@ -10,6 +10,7 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
+  roslib
   std_msgs
   sensor_msgs
   geometry_msgs
@@ -43,6 +44,7 @@ generate_messages(
 catkin_package(
   CATKIN_DEPENDS
   roscpp
+  roslib
   std_msgs
   sensor_msgs
   pcl_ros
